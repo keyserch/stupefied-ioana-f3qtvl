@@ -1,3 +1,6 @@
+import { Buffer } from "buffer";
+if (!(window as any).Buffer) (window as any).Buffer = Buffer;
+
 import React from "react";
 import { createRoot } from "react-dom/client";
 import {
