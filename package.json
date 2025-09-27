@@ -2,11 +2,7 @@
   "name": "react-typescript",
   "version": "1.0.0",
   "description": "React and TypeScript example starter project",
-  "keywords": [
-    "typescript",
-    "react",
-    "starter"
-  ],
+  "keywords": ["typescript", "react", "starter"],
   "main": "src/index.tsx",
   "dependencies": {
     "loader-utils": "3.2.1",
@@ -21,7 +17,8 @@
     "@solana/wallet-adapter-react-ui": "0.9.39",
     "@solana/wallet-adapter-phantom": "0.9.28",
     "@noble/curves": "1.4.0",
-    "@noble/hashes": "1.4.0"
+    "@noble/hashes": "1.4.0",
+    "buffer": "^6.0.3"
   },
   "devDependencies": {
     "@types/react": "18.2.38",
