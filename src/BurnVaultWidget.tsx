@@ -21,12 +21,8 @@ import {
 const PROGRAM_ID = new PublicKey(
   "An4RAQ5KT7jbsQn6N1SdQfXV7MJCYnRsZRY2DTxNrsHU"
 );
-const RESERVE_MINT = new PublicKey(
-  "6LLA1CwguZrV2og8yy5RWj9KhtPHjD2oxpupHLHckA73"
-); // Dec 9
-const VAULT_MINT = new PublicKey(
-  "C2QoyXuuWjTk5JCY2inLe3EQrWLry2ByL5FxyrwN5qNr"
-); // Dec 6
+const RESERVE_MINT = new PublicKey("6LLA1CwguZrV2og8yy5RWj9KhtPHjD2oxpupHLHckA73"); // Dec 9
+const VAULT_MINT = new PublicKey("C2QoyXuuWjTk5JCY2inLe3EQrWLry2ByL5FxyrwN5qNr"); // Dec 6
 
 const VAULT_DEC = 6;
 const COMMIT: Commitment = "confirmed";
@@ -44,22 +40,18 @@ const keyFor = (walletB58: string | null) =>
     walletB58 ?? "no-wallet"
   }`;
 
-const getLastClaimTs = (walletB58: string | null) => {
+// --- URL dynamique pour Phantom deep-link (CSB, Vercel, domaine custom) ---
+function getAppUrl() {
   try {
-    const v = localStorage.getItem(keyFor(walletB58));
-    return v ? Number(v) : 0;
-  } catch {
-    return 0;
-  }
-};
-const setLastClaimTs = (walletB58: string | null, ts: number) => {
-  try {
-    localStorage.setItem(keyFor(walletB58), String(ts));
+    if (typeof window !== "undefined") {
+      const u = new URL(window.location.href);
+      // on garde origin + pathname (sans hash/querry)
+      return `${u.origin}${u.pathname}`;
+    }
   } catch {}
-};
-
-// --- Phantom in-app browser helper banner (mobile only) ---
-const APP_URL = "https://app.vaultprotocol.net/"; // mets ton URL Vercel si tu n'as pas encore le domaine
+  // fallback utile si rendu côté build sans window
+  return "https://f3qtvl.csb.app/";
+}
 
 function isMobileUA() {
   if (typeof navigator === "undefined") return false;
@@ -116,6 +108,20 @@ async function withRetry<T>(
   }
   throw lastErr;
 }
+
+const getLastClaimTs = (walletB58: string | null) => {
+  try {
+    const v = localStorage.getItem(keyFor(walletB58));
+    return v ? Number(v) : 0;
+  } catch {
+    return 0;
+  }
+};
+const setLastClaimTs = (walletB58: string | null, ts: number) => {
+  try {
+    localStorage.setItem(keyFor(walletB58), String(ts));
+  } catch {}
+};
 
 export default function BurnVaultWidget() {
   const { connection } = useConnection();
@@ -259,7 +265,7 @@ export default function BurnVaultWidget() {
     const inPhantom = isInPhantomInApp();
     if (mobile && !inPhantom) {
       setShowPhantomHint(true);
-      setPhantomLinks(buildPhantomDeepLink(APP_URL)); // force opening your URL inside Phantom
+      setPhantomLinks(buildPhantomDeepLink(getAppUrl())); // URL dynamique
     } else {
       setShowPhantomHint(false);
     }
@@ -429,9 +435,7 @@ export default function BurnVaultWidget() {
 
         const preSupply = BigInt(mintVault.supply.toString()); // 6d
         const vaultBal = BigInt(accReserve.amount.toString()); // 9d
-        const burnAmount = BigInt(
-          Math.floor(Number(amountUi) * 10 ** VAULT_DEC)
-        );
+        const burnAmount = BigInt(Math.floor(Number(amountUi) * 10 ** VAULT_DEC));
 
         if (preSupply === 0n) {
           setPreview("0");
@@ -550,11 +554,7 @@ export default function BurnVaultWidget() {
         { pubkey: uRes, isSigner: false, isWritable: true },
         { pubkey: publicKey, isSigner: true, isWritable: true },
         { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
-        {
-          pubkey: ASSOCIATED_TOKEN_PROGRAM_ID,
-          isSigner: false,
-          isWritable: false,
-        },
+        { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
         { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
       ];
       tx.add(
@@ -642,11 +642,7 @@ export default function BurnVaultWidget() {
         { pubkey: uVault!, isSigner: false, isWritable: true },
         { pubkey: publicKey!, isSigner: true, isWritable: false },
         { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
-        {
-          pubkey: ASSOCIATED_TOKEN_PROGRAM_ID,
-          isSigner: false,
-          isWritable: false,
-        },
+        { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
         { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
       ];
       tx.add(
@@ -678,9 +674,7 @@ export default function BurnVaultWidget() {
       setLastClaimTsState(now);
 
       setRefreshTick((t) => t + 1);
-      alert(
-        `✔️ Claim sent!\nTx: ${signature}\nAmount: ${CLAIM_VAULT_AMOUNT_UI} VAULT`
-      );
+      alert(`✔️ Claim sent!\nTx: ${signature}\nAmount: ${CLAIM_VAULT_AMOUNT_UI} VAULT`);
     } catch (e: any) {
       console.error(e);
       setClaimErr(e?.message || String(e));
@@ -730,11 +724,7 @@ export default function BurnVaultWidget() {
     >
       <div style={{ fontSize: 12, opacity: 0.7 }}>{title}</div>
       <div style={{ fontSize: 20, fontWeight: 700, marginTop: 2 }}>{value}</div>
-      {subtitle && (
-        <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4 }}>
-          {subtitle}
-        </div>
-      )}
+      {subtitle && <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4 }}>{subtitle}</div>}
     </div>
   );
 
@@ -764,8 +754,7 @@ export default function BurnVaultWidget() {
             Having trouble signing on mobile?
           </div>
           <div style={{ fontSize: 13, opacity: 0.85, marginBottom: 10 }}>
-            Open this page directly in Phantom’s in-app browser for the most
-            reliable experience.
+            Open this page directly in Phantom’s in-app browser for the most reliable experience.
           </div>
           <button
             onClick={openInPhantom}
@@ -785,8 +774,7 @@ export default function BurnVaultWidget() {
 
       <h3>Burn VAULT → Redeem JitoSOL (Devnet)</h3>
       <p style={{ fontSize: 12, opacity: 0.7, marginTop: -8 }}>
-        Program: {PROGRAM_ID.toBase58().slice(0, 6)}…
-        {PROGRAM_ID.toBase58().slice(-6)}
+        Program: {PROGRAM_ID.toBase58().slice(0, 6)}…{PROGRAM_ID.toBase58().slice(-6)}
       </p>
 
       {/* ===== Live Reserve & Supply ===== */}
@@ -827,15 +815,12 @@ export default function BurnVaultWidget() {
         <div>
           Estimated redemption ≈ <b>{preview}</b> JitoSOL
         </div>
-        <div
-          style={{ fontSize: 12, opacity: 0.8, marginTop: 6, lineHeight: 1.5 }}
-        >
+        <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6, lineHeight: 1.5 }}>
           <div>
             Current rate: <b>{rateNow}</b> JitoSOL per <b>1 VAULT</b>
           </div>
           <div>
-            You burn <b>{pctBurn}</b> of total supply → you receive{" "}
-            <b>{pctReserve}</b> of the reserve.
+            You burn <b>{pctBurn}</b> of total supply → you receive <b>{pctReserve}</b> of the reserve.
           </div>
         </div>
         <button
@@ -872,21 +857,13 @@ export default function BurnVaultWidget() {
       </button>
 
       {err && (
-        <pre
-          style={{ marginTop: 12, color: "#b00020", whiteSpace: "pre-wrap" }}
-        >
+        <pre style={{ marginTop: 12, color: "#b00020", whiteSpace: "pre-wrap" }}>
           {err}
         </pre>
       )}
 
       {/* ===== CLAIM Section (soft cooldown front-only) ===== */}
-      <hr
-        style={{
-          margin: "24px 0",
-          border: "none",
-          borderTop: "1px solid #eee",
-        }}
-      />
+      <hr style={{ margin: "24px 0", border: "none", borderTop: "1px solid #eee" }} />
       <h4>Claim VAULT from the PDA faucet (testnet)</h4>
 
       <div style={{ marginTop: 6, fontSize: 13 }}>
@@ -916,18 +893,14 @@ export default function BurnVaultWidget() {
           cursor: cooldownActive ? "not-allowed" : "pointer",
         }}
         title={
-          cooldownActive
-            ? `Please wait ${cooldownLabel} before claiming again.`
-            : undefined
+          cooldownActive ? `Please wait ${cooldownLabel} before claiming again.` : undefined
         }
       >
         {claimLoading ? "Send..." : `Claim ${CLAIM_VAULT_AMOUNT_UI} VAULT`}
       </button>
 
       {claimErr && (
-        <pre
-          style={{ marginTop: 12, color: "#b00020", whiteSpace: "pre-wrap" }}
-        >
+        <pre style={{ marginTop: 12, color: "#b00020", whiteSpace: "pre-wrap" }}>
           {claimErr}
         </pre>
       )}
@@ -949,7 +922,6 @@ export default function BurnVaultWidget() {
           <div>liveRatio: {debug.liveRatio}</div>
           <div>rateNow: {rateNow} (JitoSOL / VAULT)</div>
           <div>faucetVaultUi: {faucetVaultUi}</div>
-          {/* NEW */}
           <div>cooldownActive: {String(cooldownActive)}</div>
           <div>lastClaimTs: {lastClaimTs}</div>
         </div>
@@ -957,4 +929,5 @@ export default function BurnVaultWidget() {
     </div>
   );
 }
+
 
