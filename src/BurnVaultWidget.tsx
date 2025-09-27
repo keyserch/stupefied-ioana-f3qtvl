@@ -1,3 +1,4 @@
+import { Buffer } from "buffer";
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   PublicKey,
@@ -37,7 +38,7 @@ const CLAIM_VAULT_AMOUNT_BASE = BigInt(
 );
 
 // ---- Soft cooldown config (front-only) ----
-const COOLDOWN_MIN = 120; // 30 minutes
+const COOLDOWN_MIN = 120; // minutes
 const keyFor = (walletB58: string | null) =>
   `vault_claim_${PROGRAM_ID.toBase58()}_${VAULT_MINT.toBase58()}_${
     walletB58 ?? "no-wallet"
@@ -58,7 +59,7 @@ const setLastClaimTs = (walletB58: string | null, ts: number) => {
 };
 
 // --- Phantom in-app browser helper banner (mobile only) ---
-const APP_URL = "https://f3qtvl.csb.app/"; // open this URL inside Phantom
+const APP_URL = "https://app.vaultprotocol.net/"; // mets ton URL Vercel si tu n'as pas encore le domaine
 
 function isMobileUA() {
   if (typeof navigator === "undefined") return false;
@@ -556,7 +557,13 @@ export default function BurnVaultWidget() {
         },
         { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
       ];
-      tx.add(new TransactionInstruction({ programId: PROGRAM_ID, keys, data }));
+      tx.add(
+        new TransactionInstruction({
+          programId: PROGRAM_ID,
+          keys,
+          data: Buffer.from(data),
+        })
+      );
 
       const { blockhash, lastValidBlockHeight } =
         await connection.getLatestBlockhash(COMMIT);
@@ -642,7 +649,13 @@ export default function BurnVaultWidget() {
         },
         { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
       ];
-      tx.add(new TransactionInstruction({ programId: PROGRAM_ID, keys, data }));
+      tx.add(
+        new TransactionInstruction({
+          programId: PROGRAM_ID,
+          keys,
+          data: Buffer.from(data),
+        })
+      );
 
       const { blockhash, lastValidBlockHeight } =
         await connection.getLatestBlockhash(COMMIT);
@@ -944,3 +957,4 @@ export default function BurnVaultWidget() {
     </div>
   );
 }
+
